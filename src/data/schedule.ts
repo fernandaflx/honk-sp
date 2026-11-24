@@ -208,7 +208,8 @@ export const days: FestivalDay[] = [
     title: "Ocupa Perus!",
     pending: false,
     venueId: "quilombaque",
-    note: "Três palcos nos arredores da comunidade.",
+    note:
+      "Três palcos nos arredores da comunidade. Os horários de sábado ainda não são oficiais: são estimativas organizadas com base na ordem das apresentações no post oficial do HONK! SP. Os horários serão atualizados assim que a programação completa for divulgada, prevista até sexta-feira (27/11).",
     activities: [
       ...stageActivities("quilombaque", 14 * 60, [
         "sambrass",
