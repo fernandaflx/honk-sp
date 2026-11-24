@@ -1,0 +1,46 @@
+{
+  "name": "honk-sp",
+  "version": "1.0.0",
+  "description": "Guia independente do HONK! SP 2026",
+  "scripts": {
+    "dev": "next dev --webpack --hostname 127.0.0.1 -p 3004",
+    "build": "next build --webpack",
+    "start": "python3 -m http.server 3004 --bind 127.0.0.1 --directory out",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test tests/schedule.test.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.2",
+  "dependencies": {
+    "lucide-react": "0.575.0",
+    "next": "^16.2.10",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tailwindcss": "^4.3.3"
+  },
+  "private": true,
+  "pnpm": {
+    "overrides": {
+      "brace-expansion@^1.1.7": "1.1.18",
+      "ignore@^7.0.0": "7.0.5",
+      "eslint-plugin-react-hooks": "7.0.1",
+      "esbuild": "0.27.2"
+    }
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.18",
+    "@types/node": "20.19.43",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.1.5",
+    "tsx": "4.21.0",
+    "typescript": "5.9.3"
+  },
+  "optionalDependencies": {
+    "@next/swc-darwin-arm64": "16.2.10"
+  }
+}

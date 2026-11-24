@@ -1,0 +1,10 @@
+node_modules/
+.next/
+out/
+.cache/
+*.tsbuildinfo
+.env*
+!.env.example
+*.orig
+*.rej
+.DS_Store
