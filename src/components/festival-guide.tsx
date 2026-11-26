@@ -32,6 +32,7 @@ const typeLabels = {
   opening: "Abertura",
   show: "Espetáculo",
   music: "",
+  procession: "Mini cortejo",
 };
 function InstagramLink({ handle }: { handle: string }) {
   return (
@@ -104,6 +105,9 @@ function ActivityCard({
         </div>
       )}
       <h5>{activityName(activity)}</h5>
+      {activity.type === "procession" && (
+        <p className="activity-kind">Mini cortejo</p>
+      )}
       {activity.timing === "estimated" && compact && (
         <span className="estimated">Horário previsto</span>
       )}
@@ -115,14 +119,31 @@ function ActivityCard({
     </article>
   );
 }
-function ScheduleList({ activities }: { activities: Activity[] }) {
+function ScheduleList({
+  activities,
+  preserveOrder = false,
+}: {
+  activities: Activity[];
+  preserveOrder?: boolean;
+}) {
+  const groups: [string, Activity[]][] = preserveOrder
+    ? activities.map((activity) => [
+        activity.start ?? "unscheduled",
+        [activity],
+      ])
+    : groupByStart(activities);
   return (
     <div className="schedule-list">
-      {groupByStart(activities).map(([time, items]) => (
-        <div key={time} className="time-group">
+      {groups.map(([time, items], index) => (
+        <div
+          key={`${time}-${index}`}
+          className={`time-group ${time === "unscheduled" ? "unscheduled-group" : ""}`}
+        >
           <div className="time-marker">
             {time !== "unscheduled" && <time>{time}</time>}
-            {items.length > 1 && <span>{items.length} simultâneas</span>}
+            {time !== "unscheduled" && items.length > 1 && (
+              <span>{items.length} simultâneas</span>
+            )}
           </div>
           <div className="time-cards">
             {items.map((activity) => (
@@ -137,7 +158,8 @@ function ScheduleList({ activities }: { activities: Activity[] }) {
 function ScheduleGrid({ activities }: { activities: Activity[] }) {
   const timed = activities.filter((a) => a.start && a.end);
   const untimed = activities.filter((a) => !a.start || !a.end);
-  if (!timed.length) return <ScheduleList activities={activities} />;
+  if (!timed.length)
+    return <ScheduleList activities={activities} preserveOrder />;
   const start =
     Math.floor(Math.min(...timed.map((a) => toMinutes(a.start!))) / 60) * 60;
   const end =
@@ -228,7 +250,9 @@ function ScheduleGrid({ activities }: { activities: Activity[] }) {
           )}
         </div>
       </div>
-      {untimed.length > 0 && <ScheduleList activities={untimed} />}
+      {untimed.length > 0 && (
+        <ScheduleList activities={untimed} preserveOrder />
+      )}
     </>
   );
 }
@@ -309,6 +333,7 @@ function DaySection({
   const availableStages = stages.filter((s) =>
     day.activities.some((a) => a.stageId === s.id),
   );
+  const stageVenues = availableStages.filter((stage) => stage.venueId);
   const filtered = day.activities.filter(
     (a) => stageId === "all" || a.stageId === stageId,
   );
@@ -371,18 +396,50 @@ function DaySection({
               .map((stage) => (
                 <span key={stage.id}>
                   <i className={stage.color} />
-                  {stage.name.replace("Palco ", "")} · abertura {stage.opensAt}
+                  {stage.name.replace("Palco ", "")} ·{" "}
+                  {stage.closesAt
+                    ? `${stage.opensAt} às ${stage.closesAt}`
+                    : `abertura ${stage.opensAt}`}
                 </span>
               ))}
           </div>
         </>
       )}
-      {filtered.length > 0 &&
-        (view === "list" ? (
-          <ScheduleList activities={filtered} />
-        ) : (
-          <ScheduleGrid activities={filtered} />
-        ))}
+      {stageVenues.length > 0
+        ? stageVenues
+            .filter((stage) => stageId === "all" || stage.id === stageId)
+            .map((stage) => {
+              const activities = filtered.filter(
+                (activity) => activity.stageId === stage.id,
+              );
+              return (
+                <section
+                  className="stage-program"
+                  key={stage.id}
+                  aria-label={stage.name}
+                >
+                  <VenueHeader venue={venues[stage.venueId!]} />
+                  <p className="stage-program-note">
+                    {stage.closesAt
+                      ? `Das ${stage.opensAt} às ${stage.closesAt}.`
+                      : `A partir das ${stage.opensAt}.`}{" "}
+                    {stage.note && `${stage.note} `}
+                    Ordem das apresentações conforme o post oficial.
+                  </p>
+                  {view === "list" ? (
+                    <ScheduleList activities={activities} preserveOrder />
+                  ) : (
+                    <ScheduleGrid activities={activities} />
+                  )}
+                </section>
+              );
+            })
+        : filtered.length > 0 &&
+          (view === "list" ? (
+            <ScheduleList activities={filtered} />
+          ) : (
+            <ScheduleGrid activities={filtered} />
+          ))}
       {day.party && <PartySection party={day.party} />}
     </section>
   );

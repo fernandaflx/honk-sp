@@ -12,9 +12,9 @@ const all = days.flatMap((day) => [
   ...day.activities,
   ...(day.party?.activities ?? []),
 ]);
-test("41 unique activities and complete references", () => {
-  assert.equal(all.length, 41);
-  assert.equal(new Set(all.map((a) => a.id)).size, 41);
+test("53 unique activities and complete references", () => {
+  assert.equal(all.length, 53);
+  assert.equal(new Set(all.map((a) => a.id)).size, 53);
   for (const day of days) {
     if (day.venueId) assert.ok(venues[day.venueId]);
     for (const a of [...day.activities, ...(day.party?.activities ?? [])]) {
@@ -39,16 +39,15 @@ test("Thursday preserves all confirmed windows and activity types", () => {
   assert.equal(new Set(days[0].activities.map((a) => a.type)).size, 4);
   assert.equal(days[0].activities[0].instagram?.length, 2);
 });
-test("Saturday has 24 consecutive 45 minute performances", () => {
+test("Saturday keeps 45 minute slots and revised Quilombaque anchors", () => {
   const saturday = days[2];
   assert.equal(saturday.activities.length, 24);
-  for (const stage of stages) {
+  for (const stage of stages.filter((stage) =>
+    saturday.activities.some((activity) => activity.stageId === stage.id),
+  )) {
     const items = saturday.activities.filter((a) => a.stageId === stage.id);
     assert.equal(items.length, 8);
-    assert.equal(
-      items[0].start,
-      stage.id === "quilombaque" ? "14:00" : "15:00",
-    );
+    assert.equal(items[0].start, "15:00");
     items.forEach((a, i) => {
       assert.equal(toMinutes(a.end!) - toMinutes(a.start!), 45);
       assert.equal(a.timing, "estimated");
@@ -56,8 +55,25 @@ test("Saturday has 24 consecutive 45 minute performances", () => {
     });
   }
   assert.equal(saturday.activities.at(-1)?.end, "21:00");
+  const xamego = saturday.activities.find(
+    (activity) => activity.bandId === "xamego",
+  );
+  assert.equal(xamego?.start, "19:30");
+  assert.equal(xamego?.end, "20:15");
+  assert.equal(
+    saturday.activities.find((activity) => activity.bandId === "ponte")?.start,
+    "20:15",
+  );
   const groups = groupByStart(saturday.activities);
-  assert.equal(groups.find(([time]) => time === "15:00")?.[1].length, 2);
+  assert.equal(groups.find(([time]) => time === "15:00")?.[1].length, 3);
+  assert.equal(
+    saturday.activities.find((activity) => activity.bandId === "unides")?.start,
+    "18:00",
+  );
+  assert.equal(
+    saturday.activities.find((activity) => activity.bandId === "swing")?.start,
+    "18:45",
+  );
 });
 test("Parties have correct tickets and no invented times", () => {
   const parties = days.flatMap((d) => (d.party ? [d.party] : []));
@@ -85,18 +101,18 @@ test("Distinct trombone collectives, missing profiles and pending days", () => {
   assert.equal(bands.trombetas.instagram.length, 0);
   assert.deepEqual(
     days.filter((d) => d.pending).map((d) => d.weekday),
-    ["Sexta", "Domingo"],
+    ["Domingo"],
   );
 });
 
-test("Initial page renders all 41 activities, pending days and separate party sections", async () => {
+test("Initial page renders all 53 activities, pending days and separate party sections", async () => {
   const React = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { default: FestivalGuide } =
     await import("../src/components/festival-guide");
   const html = renderToStaticMarkup(React.createElement(FestivalGuide));
-  assert.equal((html.match(/data-activity-id=/g) ?? []).length, 41);
-  assert.equal((html.match(/Programação em breve/g) ?? []).length, 2);
+  assert.equal((html.match(/data-activity-id=/g) ?? []).length, 53);
+  assert.equal((html.match(/Programação em breve/g) ?? []).length, 1);
   assert.equal((html.match(/Comprar ingressos/g) ?? []).length, 2);
   assert.equal(
     (html.match(/<details class="party-details">/g) ?? []).length,
@@ -108,4 +124,78 @@ test("Initial page renders all 41 activities, pending days and separate party se
   assert.ok(html.includes("pernaltasdequinta"));
   assert.ok(html.includes("racheldeboa"));
   assert.ok(html.includes("instagram.com/calcinhasbelicas/"));
+});
+
+test("Friday preserves official order and only supplied individual times", () => {
+  const friday = days[1];
+  assert.equal(friday.pending, false);
+  assert.equal(friday.activities.length, 12);
+  const arena = friday.activities.filter(
+    (activity) => activity.stageId === "bela-vista",
+  );
+  const street = friday.activities.filter(
+    (activity) => activity.stageId === "sao-vicente",
+  );
+  assert.deepEqual(
+    arena.slice(1).map((activity) => activity.bandId),
+    ["firuliros", "ponte", "mzceja", "fanfarrock", "manada"],
+  );
+  assert.deepEqual(
+    street.map((activity) => activity.bandId),
+    ["elas", "britney", "cumbia-calavera", "mixtape", "metais", "summer"],
+  );
+  assert.equal(arena[0].start, "17:00");
+  assert.equal(arena[0].end, "18:30");
+  assert.deepEqual(arena[0].instagram, ["tatiana_vinhais", "bruno_roldo"]);
+  assert.equal(
+    arena.find((activity) => activity.bandId === "ponte")?.start,
+    "19:15",
+  );
+  assert.equal(
+    arena.find((activity) => activity.bandId === "ponte")?.end,
+    undefined,
+  );
+  assert.ok(
+    [...arena.slice(1), ...street]
+      .filter((activity) => activity.bandId !== "ponte")
+      .every((activity) => !activity.start && !activity.end),
+  );
+  assert.equal(street[0].type, "procession");
+  assert.equal(bands.ponte.state, "SC");
+  assert.equal(bands.mzceja.name, "Mzčejà Tåbëbo Orquestra");
+  assert.notEqual(
+    stages.find((stage) => stage.id === "bela-vista")?.venueId,
+    friday.party?.venueId,
+  );
+  for (const stage of stages.filter((stage) => stage.venueId)) {
+    assert.ok(venues[stage.venueId!]);
+    assert.equal(stage.opensAt, "17:00");
+    assert.equal(stage.closesAt, "22:00");
+  }
+});
+
+test("Unknown start times never receive a simultaneous label", async () => {
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { default: FestivalGuide } =
+    await import("../src/components/festival-guide");
+  const html = renderToStaticMarkup(React.createElement(FestivalGuide));
+  const friday = html
+    .split('aria-labelledby="heading-2026-11-27"')[1]
+    .split('aria-labelledby="heading-2026-11-28"')[0];
+  assert.ok(!friday.includes("simultâneas"));
+  assert.equal(
+    (friday.match(/Rua Prof. Laerte Ramos de Carvalho, 280/g) ?? []).length,
+    1,
+  );
+  assert.equal((friday.match(/Rua São Vicente, 120/g) ?? []).length, 1);
+  assert.ok(friday.includes("Mini cortejo"));
+  assert.ok(
+    friday.indexOf('data-activity-id="fri-firuliros"') <
+      friday.indexOf('data-activity-id="fri-ponte"'),
+  );
+  assert.ok(
+    friday.indexOf('data-activity-id="fri-ponte"') <
+      friday.indexOf('data-activity-id="fri-mzceja"'),
+  );
 });

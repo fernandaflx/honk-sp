@@ -1,5 +1,6 @@
 export type DayId = "2026-11-26" | "2026-11-27" | "2026-11-28" | "2026-11-29";
-export type ActivityType = "workshop" | "opening" | "show" | "music";
+export type ActivityType =
+  "workshop" | "opening" | "show" | "music" | "procession";
 export interface Band {
   id: string;
   name: string;
@@ -17,6 +18,9 @@ export interface Stage {
   name: string;
   color: "yellow" | "green" | "pink";
   opensAt: string;
+  closesAt?: string;
+  note?: string;
+  venueId?: string;
 }
 export interface Activity {
   id: string;

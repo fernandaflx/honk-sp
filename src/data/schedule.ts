@@ -2,6 +2,17 @@ import type { Activity, Band, FestivalDay, Stage, Venue } from "./types";
 export const festivalTimeZone = "America/Sao_Paulo";
 export const officialInstagram = "https://www.instagram.com/honk.sp/";
 export const venues: Record<string, Venue> = {
+  "arena-bela-vista": {
+    id: "arena-bela-vista",
+    name: "Palco Arena Bela Vista",
+    address:
+      "Rua Prof. Laerte Ramos de Carvalho, 280 - Bela Vista, São Paulo - SP",
+  },
+  "rua-sao-vicente": {
+    id: "rua-sao-vicente",
+    name: "Palco Rua São Vicente",
+    address: "Rua São Vicente, 120 - Bela Vista, São Paulo - SP",
+  },
   ccsp: {
     id: "ccsp",
     name: "Centro Cultural São Paulo",
@@ -22,6 +33,23 @@ export const venues: Record<string, Venue> = {
 };
 export const stages: Stage[] = [
   {
+    id: "bela-vista",
+    name: "Palco Arena Bela Vista",
+    color: "green",
+    opensAt: "17:00",
+    closesAt: "22:00",
+    venueId: "arena-bela-vista",
+    note: "Embaixo do viaduto.",
+  },
+  {
+    id: "sao-vicente",
+    name: "Palco Rua São Vicente",
+    color: "pink",
+    opensAt: "17:00",
+    closesAt: "22:00",
+    venueId: "rua-sao-vicente",
+  },
+  {
     id: "quilombaque",
     name: "Palco Quilombaque",
     color: "yellow",
@@ -41,6 +69,9 @@ export const stages: Stage[] = [
   },
 ];
 const bandRows: [string, string, string?, string?][] = [
+  ["fanfarrock", "Fanfarrock", "SP", "fanfarrock.sp"],
+  ["elas", "Elas, Musicalmente Viajantes", "SP", "a.ciamar"],
+  ["cumbia-calavera", "Cumbia Calavera", "SP", "cumbia.calavera"],
   ["saracura", "Bloco Pernas de Saracura", undefined, "pernasdesaracura"],
   ["swing", "Unidos do Swing", "SP", "unidosdoswing"],
   ["sambrass", "Sambrass das Minas", "SP", "sambrass.sp"],
@@ -59,7 +90,7 @@ const bandRows: [string, string, string?, string?][] = [
     "unidesdosbloquinhos",
   ],
   ["xamego", "Xamego Dengo", "SP", "xamego.dengo"],
-  ["ponte", "Fanfarra da Ponte", "RS", "fanfarradaponte"],
+  ["ponte", "Fanfarra da Ponte", "SC", "fanfarradaponte"],
   ["laranja", "Laranja Bahia", "SP", "laranja.bahia"],
   ["ayo", "Bloco Percussivo AYO", "SP", "blocoayo"],
   ["firuliros", "Firuliros da Meia Noite", "SC", "firulirosdameianoite"],
@@ -89,9 +120,9 @@ const bandRows: [string, string, string?, string?][] = [
     "RS",
     "coletivo_de_trombones",
   ],
-  ["mzceja", "Mzceja Tabebo Orquestra", "SP", "mzceja.tabebo"],
+  ["mzceja", "Mzčejà Tåbëbo Orquestra", "SP", "mzceja.tabebo"],
   ["fumaca", "Fanfarra Maria Fumaça", "RJ", "fanfarramariafumaca"],
-  ["summer", "Summer Eletro bloco", "RJ", "summereletrobloco"],
+  ["summer", "Summer Eletro Bloco", "RJ", "summereletrobloco"],
   ["pirata", "Bloco Pirata", "SP", "oblocopirata"],
   ["mixtape", "Mixtape Brass Band", "RJ", "mixtapebrass"],
 ];
@@ -183,9 +214,45 @@ export const days: FestivalDay[] = [
     id: "2026-11-27",
     weekday: "Sexta",
     date: "27/11",
-    title: "O encontro continua.",
-    pending: true,
-    activities: [],
+    title: "O HONK! SP ocupa o Bixiga",
+    pending: false,
+    note: "Dois palcos das 17h às 22h. As fanfarras estão na ordem divulgada no post oficial; os horários individuais ainda não foram informados.",
+    activities: [
+      {
+        id: "fri-body-workshop",
+        type: "workshop",
+        name: "Oficina “O corpo na música”",
+        instagram: ["tatiana_vinhais", "bruno_roldo"],
+        stageId: "bela-vista",
+        start: "17:00",
+        end: "18:30",
+        timing: "confirmed",
+      },
+      ...["firuliros", "ponte", "mzceja", "fanfarrock", "manada"].map(
+        (bandId): Activity => ({
+          id: `fri-${bandId}`,
+          type: "music",
+          bandId,
+          stageId: "bela-vista",
+          ...(bandId === "ponte"
+            ? { start: "19:15", timing: "confirmed" as const }
+            : {}),
+        }),
+      ),
+      ...[
+        "elas",
+        "britney",
+        "cumbia-calavera",
+        "mixtape",
+        "metais",
+        "summer",
+      ].map((bandId): Activity => ({
+        id: `fri-${bandId}`,
+        type: bandId === "elas" ? "procession" : "music",
+        bandId,
+        stageId: "sao-vicente",
+      })),
+    ],
     party: {
       start: "22:00",
       venueId: "arena",
@@ -208,10 +275,9 @@ export const days: FestivalDay[] = [
     title: "Ocupa Perus!",
     pending: false,
     venueId: "quilombaque",
-    note:
-      "Três palcos nos arredores da comunidade. Os horários de sábado ainda não são oficiais: são estimativas organizadas com base na ordem das apresentações no post oficial do HONK! SP. Os horários serão atualizados assim que a programação completa for divulgada, prevista até sexta-feira (27/11).",
+    note: "Três palcos nos arredores da comunidade. Os horários de sábado ainda não são oficiais: são estimativas organizadas com base na ordem das apresentações no post oficial do HONK! SP. Os horários serão atualizados assim que a programação completa for divulgada, prevista até sexta-feira (27/11).",
     activities: [
-      ...stageActivities("quilombaque", 14 * 60, [
+      ...stageActivities("quilombaque", 15 * 60, [
         "sambrass",
         "trombones-sp",
         "bocas",

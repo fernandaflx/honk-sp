@@ -1002,3 +1002,27 @@ footer > span {
     transition: none !important;
   }
 }
+
+.time-group.unscheduled-group {
+  display: block;
+}
+.unscheduled-group .time-marker {
+  display: none;
+}
+.stage-program {
+  margin-top: 26px;
+  min-width: 0;
+}
+.stage-program .venue {
+  margin-bottom: 10px;
+}
+.stage-program-note {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+.activity-kind {
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 7px;
+}
