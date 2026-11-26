@@ -126,7 +126,7 @@ test("Initial page renders all 53 activities, pending days and separate party se
   assert.ok(html.includes("instagram.com/calcinhasbelicas/"));
 });
 
-test("Friday preserves official order and only supplied individual times", () => {
+test("Friday uses 45 minute slots, preserving workshop and Ponte anchor", () => {
   const friday = days[1];
   assert.equal(friday.pending, false);
   assert.equal(friday.activities.length, 12);
@@ -153,13 +153,37 @@ test("Friday preserves official order and only supplied individual times", () =>
   );
   assert.equal(
     arena.find((activity) => activity.bandId === "ponte")?.end,
-    undefined,
+    "20:00",
   );
-  assert.ok(
-    [...arena.slice(1), ...street]
-      .filter((activity) => activity.bandId !== "ponte")
-      .every((activity) => !activity.start && !activity.end),
+  assert.deepEqual(
+    arena.slice(1).map((activity) => [activity.start, activity.end]),
+    [
+      ["18:30", "19:15"],
+      ["19:15", "20:00"],
+      ["20:00", "20:45"],
+      ["20:45", "21:30"],
+      ["21:30", "22:15"],
+    ],
   );
+  assert.deepEqual(
+    street.map((activity) => [activity.start, activity.end]),
+    [
+      ["17:00", "17:45"],
+      ["17:45", "18:30"],
+      ["18:30", "19:15"],
+      ["19:15", "20:00"],
+      ["20:00", "20:45"],
+      ["20:45", "21:30"],
+    ],
+  );
+  for (const items of [arena.slice(1), street]) {
+    items.forEach((activity, index) => {
+      assert.equal(toMinutes(activity.end!) - toMinutes(activity.start!), 45);
+      assert.equal(activity.timing, "estimated");
+      if (index) assert.equal(items[index - 1].end, activity.start);
+    });
+  }
+  assert.equal(arena[0].timing, "confirmed");
   assert.equal(street[0].type, "procession");
   assert.equal(bands.ponte.state, "SC");
   assert.equal(bands.mzceja.name, "Mzčejà Tåbëbo Orquestra");
@@ -174,7 +198,7 @@ test("Friday preserves official order and only supplied individual times", () =>
   }
 });
 
-test("Unknown start times never receive a simultaneous label", async () => {
+test("Friday list groups simultaneous sets and keeps venue addresses once", async () => {
   const React = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { default: FestivalGuide } =
@@ -183,7 +207,7 @@ test("Unknown start times never receive a simultaneous label", async () => {
   const friday = html
     .split('aria-labelledby="heading-2026-11-27"')[1]
     .split('aria-labelledby="heading-2026-11-28"')[0];
-  assert.ok(!friday.includes("simultâneas"));
+  assert.ok(friday.includes("simultâneas"));
   assert.equal(
     (friday.match(/Rua Prof. Laerte Ramos de Carvalho, 280/g) ?? []).length,
     1,
@@ -198,4 +222,19 @@ test("Unknown start times never receive a simultaneous label", async () => {
     friday.indexOf('data-activity-id="fri-ponte"') <
       friday.indexOf('data-activity-id="fri-mzceja"'),
   );
+});
+
+test("Friday grid compares both stages in one shared timeline", async () => {
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { DaySection } = await import("../src/components/festival-guide");
+  const html = renderToStaticMarkup(
+    React.createElement(DaySection, { day: days[1], view: "grid" }),
+  );
+  assert.equal((html.match(/class="timeline"/g) ?? []).length, 1);
+  assert.equal((html.match(/class="stage-heading /g) ?? []).length, 2);
+  assert.equal((html.match(/data-activity-id=/g) ?? []).length, 18);
+  assert.ok(html.includes('data-activity-id="fri-body-workshop"'));
+  assert.ok(html.includes("22:15"));
+  assert.ok(html.includes("Horários previstos, sujeitos a alterações."));
 });

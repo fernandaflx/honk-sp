@@ -39,7 +39,7 @@ export const stages: Stage[] = [
     opensAt: "17:00",
     closesAt: "22:00",
     venueId: "arena-bela-vista",
-    note: "Embaixo do viaduto.",
+    note: "Embaixo do viaduto. O post informa encerramento às 22h; a sequência estimada de apresentações termina às 22h15.",
   },
   {
     id: "sao-vicente",
@@ -138,9 +138,10 @@ function stageActivities(
   stageId: string,
   start: number,
   ids: string[],
+  prefix: "fri" | "sat" = "sat",
 ): Activity[] {
   return ids.map((bandId, index) => ({
-    id: `sat-${bandId}`,
+    id: `${prefix}-${bandId}`,
     type: "music",
     bandId,
     stageId,
@@ -216,7 +217,7 @@ export const days: FestivalDay[] = [
     date: "27/11",
     title: "O HONK! SP ocupa o Bixiga",
     pending: false,
-    note: "Dois palcos das 17h às 22h. As fanfarras estão na ordem divulgada no post oficial; os horários individuais ainda não foram informados.",
+    note: "Dois palcos no Bixiga. Horários previstos, organizados conforme a ordem das apresentações no post oficial do HONK! SP.",
     activities: [
       {
         id: "fri-body-workshop",
@@ -228,29 +229,20 @@ export const days: FestivalDay[] = [
         end: "18:30",
         timing: "confirmed",
       },
-      ...["firuliros", "ponte", "mzceja", "fanfarrock", "manada"].map(
-        (bandId): Activity => ({
-          id: `fri-${bandId}`,
-          type: "music",
-          bandId,
-          stageId: "bela-vista",
-          ...(bandId === "ponte"
-            ? { start: "19:15", timing: "confirmed" as const }
-            : {}),
-        }),
+      ...stageActivities(
+        "bela-vista",
+        18 * 60 + 30,
+        ["firuliros", "ponte", "mzceja", "fanfarrock", "manada"],
+        "fri",
       ),
-      ...[
-        "elas",
-        "britney",
-        "cumbia-calavera",
-        "mixtape",
-        "metais",
-        "summer",
-      ].map((bandId): Activity => ({
-        id: `fri-${bandId}`,
-        type: bandId === "elas" ? "procession" : "music",
-        bandId,
-        stageId: "sao-vicente",
+      ...stageActivities(
+        "sao-vicente",
+        17 * 60,
+        ["elas", "britney", "cumbia-calavera", "mixtape", "metais", "summer"],
+        "fri",
+      ).map((activity): Activity => ({
+        ...activity,
+        type: activity.bandId === "elas" ? "procession" : "music",
       })),
     ],
     party: {

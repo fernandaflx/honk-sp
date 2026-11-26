@@ -322,7 +322,7 @@ function PartySection({ party }: { party: Party }) {
     </section>
   );
 }
-function DaySection({
+export function DaySection({
   day,
   view,
 }: {
@@ -405,41 +405,24 @@ function DaySection({
           </div>
         </>
       )}
-      {stageVenues.length > 0
-        ? stageVenues
+      {stageVenues.length > 0 && (
+        <div className="stage-venues">
+          {stageVenues
             .filter((stage) => stageId === "all" || stage.id === stageId)
-            .map((stage) => {
-              const activities = filtered.filter(
-                (activity) => activity.stageId === stage.id,
-              );
-              return (
-                <section
-                  className="stage-program"
-                  key={stage.id}
-                  aria-label={stage.name}
-                >
-                  <VenueHeader venue={venues[stage.venueId!]} />
-                  <p className="stage-program-note">
-                    {stage.closesAt
-                      ? `Das ${stage.opensAt} às ${stage.closesAt}.`
-                      : `A partir das ${stage.opensAt}.`}{" "}
-                    {stage.note && `${stage.note} `}
-                    Ordem das apresentações conforme o post oficial.
-                  </p>
-                  {view === "list" ? (
-                    <ScheduleList activities={activities} preserveOrder />
-                  ) : (
-                    <ScheduleGrid activities={activities} />
-                  )}
-                </section>
-              );
-            })
-        : filtered.length > 0 &&
-          (view === "list" ? (
-            <ScheduleList activities={filtered} />
-          ) : (
-            <ScheduleGrid activities={filtered} />
-          ))}
+            .map((stage) => (
+              <div key={stage.id}>
+                <VenueHeader venue={venues[stage.venueId!]} />
+                {stage.note && <p className="stage-venue-note">{stage.note}</p>}
+              </div>
+            ))}
+        </div>
+      )}
+      {filtered.length > 0 &&
+        (view === "list" ? (
+          <ScheduleList activities={filtered} />
+        ) : (
+          <ScheduleGrid activities={filtered} />
+        ))}
       {day.party && <PartySection party={day.party} />}
     </section>
   );
