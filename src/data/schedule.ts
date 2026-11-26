@@ -132,7 +132,7 @@ export const bands: Record<string, Band> = Object.fromEntries(
   ]),
 );
 const clock = (minutes: number) =>
-  `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+  `${String(Math.floor(minutes / 60) % 24).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 function stageActivities(
   stageId: string,
   start: number,
@@ -149,26 +149,44 @@ function stageActivities(
     timing: "estimated",
   }));
 }
-// Time windows from the supplied volunteer schedule; band order from the official post.
-function fridayStageActivities(
+// Time windows from supplied schedules; band order from the official posts.
+function timedStageActivities(
+  prefix: "fri" | "sat",
   stageId: string,
   slots: [string, string, string][],
 ): Activity[] {
   return slots.map(([bandId, start, end]) => ({
-    id: `fri-${bandId}`,
+    id: `${prefix}-${bandId}`,
     type: bandId === "elas" ? "procession" : "music",
     bandId,
     stageId,
     start,
     end,
-    timing: bandId === "ponte" ? "confirmed" : "estimated",
+    timing: prefix === "fri" && bandId === "ponte" ? "confirmed" : "estimated",
   }));
 }
-function partyActivities(prefix: string, ids: string[]): Activity[] {
-  return ids.map((bandId) => ({
+function partyActivities(
+  prefix: string,
+  ids: string[],
+  firstStart?: string,
+): Activity[] {
+  const firstMinute = firstStart
+    ? firstStart
+        .split(":")
+        .map(Number)
+        .reduce((hour, minute) => hour * 60 + minute)
+    : undefined;
+  return ids.map((bandId, index) => ({
     id: `${prefix}-${bandId}`,
     type: "music",
     bandId,
+    ...(firstMinute !== undefined
+      ? {
+          start: clock(firstMinute + index * 45),
+          end: clock(firstMinute + (index + 1) * 45),
+          timing: "estimated" as const,
+        }
+      : {}),
   }));
 }
 export const days: FestivalDay[] = [
@@ -243,14 +261,14 @@ export const days: FestivalDay[] = [
         end: "18:30",
         timing: "confirmed",
       },
-      ...fridayStageActivities("bela-vista", [
+      ...timedStageActivities("fri", "bela-vista", [
         ["firuliros", "18:30", "19:15"],
         ["ponte", "19:15", "20:00"],
         ["mzceja", "20:00", "20:45"],
         ["fanfarrock", "20:45", "21:30"],
         ["manada", "21:30", "22:30"],
       ]),
-      ...fridayStageActivities("sao-vicente", [
+      ...timedStageActivities("fri", "sao-vicente", [
         ["elas", "17:30", "18:15"],
         ["britney", "18:15", "19:00"],
         ["cumbia-calavera", "19:00", "19:45"],
@@ -264,14 +282,11 @@ export const days: FestivalDay[] = [
       venueId: "arena",
       ticketUrl:
         "https://shotgun.live/pt-br/events/honk-sp-2026-festa-das-musicas-e-dos-musicos-sexta",
-      activities: partyActivities("fri-party", [
-        "calcinhas",
-        "cornucopia",
-        "viva",
-        "guetto",
-        "aves",
-        "pyranha",
-      ]),
+      activities: partyActivities(
+        "fri-party",
+        ["calcinhas", "cornucopia", "viva", "guetto", "aves", "pyranha"],
+        "23:30",
+      ),
     },
   },
   {
@@ -283,15 +298,15 @@ export const days: FestivalDay[] = [
     venueId: "quilombaque",
     note: "Três palcos nos arredores da comunidade. Os horários de sábado ainda não são oficiais: são estimativas organizadas com base na ordem das apresentações no post oficial do HONK! SP. Os horários serão atualizados assim que a programação completa for divulgada, prevista até sexta-feira (27/11).",
     activities: [
-      ...stageActivities("quilombaque", 15 * 60, [
-        "sambrass",
-        "trombones-sp",
-        "bocas",
-        "obscenicas",
-        "unides",
-        "swing",
-        "xamego",
-        "ponte",
+      ...timedStageActivities("sat", "quilombaque", [
+        ["sambrass", "14:00", "15:00"],
+        ["trombones-sp", "15:45", "16:30"],
+        ["bocas", "16:30", "17:15"],
+        ["obscenicas", "17:15", "18:00"],
+        ["unides", "18:00", "18:45"],
+        ["swing", "18:45", "19:30"],
+        ["xamego", "19:30", "20:15"],
+        ["ponte", "20:15", "21:00"],
       ]),
       ...stageActivities("cambaratiba", 15 * 60, [
         "laranja",
@@ -319,14 +334,11 @@ export const days: FestivalDay[] = [
       venueId: "arena",
       ticketUrl:
         "https://shotgun.live/pt-br/events/honk-sp-2026-festa-das-musicas-e-dos-musicos-sexta-2",
-      activities: partyActivities("sat-party", [
-        "trombones-rs",
-        "mzceja",
-        "fumaca",
-        "summer",
-        "pirata",
-        "mixtape",
-      ]),
+      activities: partyActivities(
+        "sat-party",
+        ["trombones-rs", "mzceja", "fumaca", "summer", "pirata", "mixtape"],
+        "23:00",
+      ),
     },
   },
   {

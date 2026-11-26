@@ -266,6 +266,13 @@ function PartySection({ party }: { party: Party }) {
           </span>
           <h3>Festa das Fanfarras</h3>
           <p>O encontro segue na pista.</p>
+          {party.activities.some(
+            (activity) => activity.timing === "estimated",
+          ) && (
+            <p className="timing-note">
+              Horários previstos, sujeitos a alterações.
+            </p>
+          )}
           {party.start && (
             <p className="party-start">
               <Clock3 size={18} aria-hidden="true" /> A partir das{" "}
@@ -303,8 +310,14 @@ function PartySection({ party }: { party: Party }) {
                 </div>
                 {activity.start && (
                   <p className="party-time">
-                    {activity.start}
-                    {activity.end && ` até ${activity.end}`}
+                    <strong>
+                      <time dateTime={activity.start}>{activity.start}</time>
+                    </strong>
+                    {activity.end && (
+                      <span>
+                        até <time dateTime={activity.end}>{activity.end}</time>
+                      </span>
+                    )}
                   </p>
                 )}
                 {activityInstagram(activity).length > 0 && (

@@ -39,7 +39,7 @@ test("Thursday preserves all confirmed windows and activity types", () => {
   assert.equal(new Set(days[0].activities.map((a) => a.type)).size, 4);
   assert.equal(days[0].activities[0].instagram?.length, 2);
 });
-test("Saturday keeps 45 minute slots and revised Quilombaque anchors", () => {
+test("Saturday preserves Quilombaque gap and supplied time windows", () => {
   const saturday = days[2];
   assert.equal(saturday.activities.length, 24);
   for (const stage of stages.filter((stage) =>
@@ -47,11 +47,18 @@ test("Saturday keeps 45 minute slots and revised Quilombaque anchors", () => {
   )) {
     const items = saturday.activities.filter((a) => a.stageId === stage.id);
     assert.equal(items.length, 8);
-    assert.equal(items[0].start, "15:00");
+    assert.equal(
+      items[0].start,
+      stage.id === "quilombaque" ? "14:00" : "15:00",
+    );
     items.forEach((a, i) => {
-      assert.equal(toMinutes(a.end!) - toMinutes(a.start!), 45);
+      assert.equal(
+        toMinutes(a.end!) - toMinutes(a.start!),
+        stage.id === "quilombaque" && i === 0 ? 60 : 45,
+      );
       assert.equal(a.timing, "estimated");
-      if (i) assert.equal(items[i - 1].end, a.start);
+      if (i && !(stage.id === "quilombaque" && i === 1))
+        assert.equal(items[i - 1].end, a.start);
     });
   }
   assert.equal(saturday.activities.at(-1)?.end, "21:00");
@@ -65,7 +72,27 @@ test("Saturday keeps 45 minute slots and revised Quilombaque anchors", () => {
     "20:15",
   );
   const groups = groupByStart(saturday.activities);
-  assert.equal(groups.find(([time]) => time === "15:00")?.[1].length, 3);
+  assert.equal(groups.find(([time]) => time === "15:00")?.[1].length, 2);
+  const quilombaque = saturday.activities.filter(
+    (activity) => activity.stageId === "quilombaque",
+  );
+  assert.deepEqual(
+    quilombaque.map((activity) => [activity.start, activity.end]),
+    [
+      ["14:00", "15:00"],
+      ["15:45", "16:30"],
+      ["16:30", "17:15"],
+      ["17:15", "18:00"],
+      ["18:00", "18:45"],
+      ["18:45", "19:30"],
+      ["19:30", "20:15"],
+      ["20:15", "21:00"],
+    ],
+  );
+  assert.equal(
+    toMinutes(quilombaque[1].start!) - toMinutes(quilombaque[0].end!),
+    45,
+  );
   assert.equal(
     saturday.activities.find((activity) => activity.bandId === "unides")?.start,
     "18:00",
@@ -75,19 +102,52 @@ test("Saturday keeps 45 minute slots and revised Quilombaque anchors", () => {
     "18:45",
   );
 });
-test("Parties have correct tickets and no invented times", () => {
-  const parties = days.flatMap((d) => (d.party ? [d.party] : []));
+test("Parties keep tickets and ordered 45 minute estimates across midnight", () => {
+  const parties = days.flatMap((day) => (day.party ? [day.party] : []));
   assert.equal(parties.length, 2);
   assert.ok(parties[0].ticketUrl.endsWith("-sexta"));
   assert.ok(parties[1].ticketUrl.endsWith("-sexta-2"));
+  assert.deepEqual(
+    parties[0].activities.map((activity) => [
+      activity.bandId,
+      activity.start,
+      activity.end,
+    ]),
+    [
+      ["calcinhas", "23:30", "00:15"],
+      ["cornucopia", "00:15", "01:00"],
+      ["viva", "01:00", "01:45"],
+      ["guetto", "01:45", "02:30"],
+      ["aves", "02:30", "03:15"],
+      ["pyranha", "03:15", "04:00"],
+    ],
+  );
+  assert.deepEqual(
+    parties[1].activities.map((activity) => [
+      activity.bandId,
+      activity.start,
+      activity.end,
+    ]),
+    [
+      ["trombones-rs", "23:00", "23:45"],
+      ["mzceja", "23:45", "00:30"],
+      ["fumaca", "00:30", "01:15"],
+      ["summer", "01:15", "02:00"],
+      ["pirata", "02:00", "02:45"],
+      ["mixtape", "02:45", "03:30"],
+    ],
+  );
   for (const party of parties) {
     assert.equal(party.start, "22:00");
     assert.equal(party.activities.length, 6);
-    assert.ok(
-      party.activities.every(
-        (a) => a.start === undefined && a.end === undefined,
-      ),
-    );
+    party.activities.forEach((activity, index) => {
+      assert.equal(activity.timing, "estimated");
+      assert.equal(
+        (toMinutes(activity.end!) - toMinutes(activity.start!) + 1440) % 1440,
+        45,
+      );
+      if (index) assert.equal(party.activities[index - 1].end, activity.start);
+    });
   }
 });
 test("Distinct trombone collectives, missing profiles and pending days", () => {
@@ -245,4 +305,23 @@ test("Friday grid compares both stages in one shared timeline", async () => {
   assert.ok(html.includes('data-activity-id="fri-body-workshop"'));
   assert.ok(html.includes("22:30"));
   assert.ok(html.includes("Horários previstos, sujeitos a alterações."));
+});
+
+test("Party estimated hours are visible in expanded lineups and the Quilombaque pause is not an activity", async () => {
+  const React = await import("react");
+  const { renderToStaticMarkup } = await import("react-dom/server");
+  const { default: FestivalGuide } =
+    await import("../src/components/festival-guide");
+  const html = renderToStaticMarkup(React.createElement(FestivalGuide));
+  const parties = [
+    ...html.matchAll(/<section class="party">([\s\S]*?)<\/section>/g),
+  ].map((match) => match[1]);
+  assert.equal(parties.length, 2);
+  for (const party of parties) {
+    assert.ok(party.includes("Horários previstos, sujeitos a alterações."));
+    assert.equal((party.match(/class="party-time"/g) ?? []).length, 6);
+    assert.ok(party.includes('<details class="party-details">'));
+  }
+  assert.ok(!html.includes("Respiro / desmontagem"));
+  assert.equal(days[2].activities.length, 24);
 });

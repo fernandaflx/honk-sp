@@ -1037,3 +1037,22 @@ footer > span {
   font-weight: 600;
   margin-top: 7px;
 }
+
+.party-heading .timing-note {
+  margin-bottom: 0;
+}
+.party-time {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+.party-time strong {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.party-time > span {
+  font-size: 12px;
+  font-weight: 500;
+}
