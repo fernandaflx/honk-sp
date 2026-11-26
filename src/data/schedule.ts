@@ -36,16 +36,15 @@ export const stages: Stage[] = [
     id: "bela-vista",
     name: "Palco Arena Bela Vista",
     color: "green",
-    opensAt: "17:00",
-    closesAt: "22:00",
+    opensAt: "16:00",
+    closesAt: "22:30",
     venueId: "arena-bela-vista",
-    note: "Embaixo do viaduto. O post informa encerramento às 22h; a sequência estimada de apresentações termina às 22h15.",
   },
   {
     id: "sao-vicente",
     name: "Palco Rua São Vicente",
     color: "pink",
-    opensAt: "17:00",
+    opensAt: "16:30",
     closesAt: "22:00",
     venueId: "rua-sao-vicente",
   },
@@ -150,6 +149,21 @@ function stageActivities(
     timing: "estimated",
   }));
 }
+// Time windows from the supplied volunteer schedule; band order from the official post.
+function fridayStageActivities(
+  stageId: string,
+  slots: [string, string, string][],
+): Activity[] {
+  return slots.map(([bandId, start, end]) => ({
+    id: `fri-${bandId}`,
+    type: bandId === "elas" ? "procession" : "music",
+    bandId,
+    stageId,
+    start,
+    end,
+    timing: bandId === "ponte" ? "confirmed" : "estimated",
+  }));
+}
 function partyActivities(prefix: string, ids: string[]): Activity[] {
   return ids.map((bandId) => ({
     id: `${prefix}-${bandId}`,
@@ -217,7 +231,7 @@ export const days: FestivalDay[] = [
     date: "27/11",
     title: "O HONK! SP ocupa o Bixiga",
     pending: false,
-    note: "Dois palcos no Bixiga. Horários previstos, organizados conforme a ordem das apresentações no post oficial do HONK! SP.",
+    note: "Dois palcos no Bixiga. Horários organizados conforme a grade de voluntariado enviada e a ordem das fanfarras no post oficial do HONK! SP.",
     activities: [
       {
         id: "fri-body-workshop",
@@ -229,21 +243,21 @@ export const days: FestivalDay[] = [
         end: "18:30",
         timing: "confirmed",
       },
-      ...stageActivities(
-        "bela-vista",
-        18 * 60 + 30,
-        ["firuliros", "ponte", "mzceja", "fanfarrock", "manada"],
-        "fri",
-      ),
-      ...stageActivities(
-        "sao-vicente",
-        17 * 60,
-        ["elas", "britney", "cumbia-calavera", "mixtape", "metais", "summer"],
-        "fri",
-      ).map((activity): Activity => ({
-        ...activity,
-        type: activity.bandId === "elas" ? "procession" : "music",
-      })),
+      ...fridayStageActivities("bela-vista", [
+        ["firuliros", "18:30", "19:15"],
+        ["ponte", "19:15", "20:00"],
+        ["mzceja", "20:00", "20:45"],
+        ["fanfarrock", "20:45", "21:30"],
+        ["manada", "21:30", "22:30"],
+      ]),
+      ...fridayStageActivities("sao-vicente", [
+        ["elas", "17:30", "18:15"],
+        ["britney", "18:15", "19:00"],
+        ["cumbia-calavera", "19:00", "19:45"],
+        ["mixtape", "19:45", "20:30"],
+        ["metais", "20:30", "21:15"],
+        ["summer", "21:15", "22:00"],
+      ]),
     ],
     party: {
       start: "22:00",

@@ -126,7 +126,7 @@ test("Initial page renders all 53 activities, pending days and separate party se
   assert.ok(html.includes("instagram.com/calcinhasbelicas/"));
 });
 
-test("Friday uses 45 minute slots, preserving workshop and Ponte anchor", () => {
+test("Friday matches supplied volunteer time windows and published band order", () => {
   const friday = days[1];
   assert.equal(friday.pending, false);
   assert.equal(friday.activities.length, 12);
@@ -162,24 +162,30 @@ test("Friday uses 45 minute slots, preserving workshop and Ponte anchor", () => 
       ["19:15", "20:00"],
       ["20:00", "20:45"],
       ["20:45", "21:30"],
-      ["21:30", "22:15"],
+      ["21:30", "22:30"],
     ],
   );
   assert.deepEqual(
     street.map((activity) => [activity.start, activity.end]),
     [
-      ["17:00", "17:45"],
-      ["17:45", "18:30"],
-      ["18:30", "19:15"],
-      ["19:15", "20:00"],
-      ["20:00", "20:45"],
-      ["20:45", "21:30"],
+      ["17:30", "18:15"],
+      ["18:15", "19:00"],
+      ["19:00", "19:45"],
+      ["19:45", "20:30"],
+      ["20:30", "21:15"],
+      ["21:15", "22:00"],
     ],
   );
   for (const items of [arena.slice(1), street]) {
     items.forEach((activity, index) => {
-      assert.equal(toMinutes(activity.end!) - toMinutes(activity.start!), 45);
-      assert.equal(activity.timing, "estimated");
+      assert.equal(
+        toMinutes(activity.end!) - toMinutes(activity.start!),
+        activity.bandId === "manada" ? 60 : 45,
+      );
+      assert.equal(
+        activity.timing,
+        activity.bandId === "ponte" ? "confirmed" : "estimated",
+      );
       if (index) assert.equal(items[index - 1].end, activity.start);
     });
   }
@@ -193,12 +199,12 @@ test("Friday uses 45 minute slots, preserving workshop and Ponte anchor", () => 
   );
   for (const stage of stages.filter((stage) => stage.venueId)) {
     assert.ok(venues[stage.venueId!]);
-    assert.equal(stage.opensAt, "17:00");
-    assert.equal(stage.closesAt, "22:00");
+    assert.equal(stage.opensAt, stage.id === "bela-vista" ? "16:00" : "16:30");
+    assert.equal(stage.closesAt, stage.id === "bela-vista" ? "22:30" : "22:00");
   }
 });
 
-test("Friday list groups simultaneous sets and keeps venue addresses once", async () => {
+test("Friday list preserves addresses and updated offset time windows", async () => {
   const React = await import("react");
   const { renderToStaticMarkup } = await import("react-dom/server");
   const { default: FestivalGuide } =
@@ -207,7 +213,9 @@ test("Friday list groups simultaneous sets and keeps venue addresses once", asyn
   const friday = html
     .split('aria-labelledby="heading-2026-11-27"')[1]
     .split('aria-labelledby="heading-2026-11-28"')[0];
-  assert.ok(friday.includes("simultâneas"));
+  assert.ok(!friday.includes("simultâneas"));
+  assert.ok(!friday.includes("Embaixo do viaduto"));
+  assert.ok(!friday.includes("Todos os palcos"));
   assert.equal(
     (friday.match(/Rua Prof. Laerte Ramos de Carvalho, 280/g) ?? []).length,
     1,
@@ -235,6 +243,6 @@ test("Friday grid compares both stages in one shared timeline", async () => {
   assert.equal((html.match(/class="stage-heading /g) ?? []).length, 2);
   assert.equal((html.match(/data-activity-id=/g) ?? []).length, 18);
   assert.ok(html.includes('data-activity-id="fri-body-workshop"'));
-  assert.ok(html.includes("22:15"));
+  assert.ok(html.includes("22:30"));
   assert.ok(html.includes("Horários previstos, sujeitos a alterações."));
 });

@@ -377,7 +377,7 @@ export function DaySection({
               aria-pressed={stageId === "all"}
               onClick={() => setStageId("all")}
             >
-              Todos os palcos
+              Todos
             </button>
             {availableStages.map((stage) => (
               <button
@@ -396,10 +396,7 @@ export function DaySection({
               .map((stage) => (
                 <span key={stage.id}>
                   <i className={stage.color} />
-                  {stage.name.replace("Palco ", "")} ·{" "}
-                  {stage.closesAt
-                    ? `${stage.opensAt} às ${stage.closesAt}`
-                    : `abertura ${stage.opensAt}`}
+                  {stage.name.replace("Palco ", "")}
                 </span>
               ))}
           </div>
